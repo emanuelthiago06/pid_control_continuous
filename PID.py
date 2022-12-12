@@ -19,6 +19,7 @@ class PID:
         self.tune = kwargs["tune"] if "tune" in kwargs else 0 
         self.filter = []
         self.pid = []
+        self.error = 0
     def get_pid(self):
         if self.kp and self.kd and self.ki:
             self.pid = [[self.kd,self.kp,self.ki],[1,0]]
@@ -57,7 +58,7 @@ class PID:
         return list_values
 
 ## Only works for a step signal WIP
-    def tune_pid(self):
+    def tune_pid_auto(self):
         x = Symbol("x")
         temp_ft = self.ft.copy()
         num = self.pid[0].copy()
@@ -67,11 +68,15 @@ class PID:
         count = 0
         y_num = 0
         y_den = 0
-        for i in num:
-            y += x**count*i
+        for j in den_f:
+            y_den += x**count*i
             count+=1
-        kp = limit(1/y,x,0)
-        error = 1/(1+kp)
+        count = 0
+        for i in num:
+            y_num += x**count*i
+            count+=1
+        kp = limit(y_num/y_den,x,0)
+        self.error = 1/(1+kp)
 if __name__ == "__main__":
     test = PID(kp = 1,ki = 1,kd = 1,ft =[1,0])
     test.tune_pid()
