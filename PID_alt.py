@@ -16,14 +16,19 @@ class PID:
 
     def tune_method(self):
         if self.tune == "teste":
+            self.kp = 1.275
+            self.ki = 0.603
+            self.kd = 0
             
 
     def pid_calc(self):
         #eq = kp*(1+td*s+1/(ti*s))
-        first_term_num = [self.kp*self.td,self.kp]   #(kp+kp*td*s)
+        self.tune_method()
+        first_term_num = [self.kp*self.kd,self.kp]   #(kp+kp*td*s)
         first_term_den = [0,1]
         second_term_num = [0,self.kp] #1/(ti*s)
-        second_term_den = [self.ti,0]
+        second_term_den = [self.ki,0]
+        print(first_term_den,first_term_den,second_term_num,second_term_den)
         pid_num,pid_den = self.sum_frac(first_term_num,first_term_den,second_term_num,second_term_den)
         return pid_num,pid_den
     
@@ -70,5 +75,5 @@ class PID:
 
 if __name__ == "__main__":
     test = PID(delay = 1,tune = "teste")
-    value = test.true_conv([0,1],[5,1])
-    print(value)
+    pid_num,pid_den = test.pid_calc()
+    print(pid_num,pid_den)
