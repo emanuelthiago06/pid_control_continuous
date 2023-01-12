@@ -1,4 +1,4 @@
-import math
+import cmath
 
 def model_pid_first_order(delay,time_const,const,p_const,i_const,d_const):
     kp = p_const*time_const/(const*delay)
@@ -57,8 +57,8 @@ def solve_second_order(den):
     b = den[-2]
     a = den[-3]
     delta = b**2-4*a*c
-    x1 = (-b+math.sqrt(delta))/(2*a)
-    x2 = (-b-math.sqrt(delta))/(2*a)
+    x1 = (-b+cmath.sqrt(delta))/(2*a)
+    x2 = (-b-cmath.sqrt(delta))/(2*a)
     return x1,x2
 
 def skogestad_fourth_case(num,den):
