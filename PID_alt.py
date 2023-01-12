@@ -1,11 +1,17 @@
-
+import tunning_methods
+import control as ct
+import matplotlib.pyplot as plt
 
 class PID:
     def __init__(self,**kwargs):
         self.kp = 0
         self.ki = 0
         self.kd = 0
+        self.pid_den = []
+        self.pid_num = []
         self.tune = 0
+        self.num = kwargs["num"]
+        self.den = kwargs["den"]
         if "tune" not in kwargs:
             self.kp = kwargs["kp"]
             self.ki = kwargs["ki"]
@@ -15,22 +21,36 @@ class PID:
         self.delay = kwargs["delay"]
 
     def tune_method(self):
-        if self.tune == "teste":
+        if self.tune == "skogestad":
+            self.kp,self.ki,self.kd = tunning_methods.skogestad_method(self.num,self.den)
+        list_names = ["ziegle_pi","ziegle,pid","chr_pi","chr_pid","chr20_pi","chr20_pid"]
+        if self.tune == "auto":
             self.kp = 1.275
             self.ki = 0.603
             self.kd = 0
             
+    def plot_graphs(self):
+        sys = ct.tf(self.num,self.den)
+        print(sys)
+        t1,y1 = ct.step_response(sys)
+        sys_pid_alone =  ct.tf(self.pid_num,self.pid_den)
+        print(sys_pid_alone)
+        sys_pid = ct.tf(self.true_conv(self.pid_num,self.num),self.true_conv(self.pid_den,self.den))
+        print(sys_pid)
+        t2,y2 = ct.step_response(sys_pid)
+        t3,y3 = ct.step_response(sys_pid_alone)
+        plt.plot(t1,y1)
+        print(y3)
+        print(y2)
+        plt.show()
 
-    def pid_calc(self):
+    def pid_calc_paralel(self):
         #eq = kp*(1+td*s+1/(ti*s))
-        self.tune_method()
         first_term_num = [self.kp*self.kd,self.kp]   #(kp+kp*td*s)
         first_term_den = [0,1]
         second_term_num = [0,self.kp] #1/(ti*s)
         second_term_den = [self.ki,0]
-        print(first_term_den,first_term_den,second_term_num,second_term_den)
-        pid_num,pid_den = self.sum_frac(first_term_num,first_term_den,second_term_num,second_term_den)
-        return pid_num,pid_den
+        self.pid_num,self.pid_den = self.sum_frac(first_term_num,first_term_den,second_term_num,second_term_den)
     
     def sum_frac(self,num1,den1,num2,den2):
         num1_conv = self.true_conv(num1,den2)
@@ -72,8 +92,11 @@ class PID:
         sum_result.reverse()
         return sum_result
 
+    def get_pid(self):
+        self.tune_method()
+        self.pid_calc_paralel()
+        self.plot_graphs()
 
 if __name__ == "__main__":
-    test = PID(delay = 1,tune = "teste")
-    pid_num,pid_den = test.pid_calc()
-    print(pid_num,pid_den)
+    test = PID(delay = 0,tune = "auto",num = [1],den = [0.603,1])
+    test.get_pid()
