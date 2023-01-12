@@ -46,6 +46,15 @@ class PID:
         print(t3)
         plt.show()
 
+    def pid_calc_serie(self):
+        integrate_term_num = [self.ki,1] #(1+Tis)
+        integrate_term_den = [self.ki,0] #(Tis)
+        derivative_term_num = [self.kd,1] #Tds+1
+        derivative_term_den = [0,1]
+        id_num = self.true_conv(integrate_term_num,derivative_term_num)
+        self.pid_den = self.true_conv(integrate_term_den,derivative_term_den)
+        self.pid_num = [i*self.kp for i in id_num]
+
     def pid_calc_paralel(self):
         #eq = kp*(1+td*s+1/(ti*s))
         first_term_num = [self.kp*self.kd,self.kp]   #(kp+kp*td*s)
