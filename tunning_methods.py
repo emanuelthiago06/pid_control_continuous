@@ -21,7 +21,7 @@ tunning_methods_table_first_order = {
 
 def skogestad_first_case(num,den): #needs to be checked the constant can be a issue due to one being related to other
     const = num[-1]/den[-2]
-    new_den = den/den[-2]
+    new_den = [x/den[-2] for x in den]
     time_const = 1/new_den[-1]
     k1 = 4
     tc = 0.7*time_const
@@ -32,8 +32,8 @@ def skogestad_first_case(num,den): #needs to be checked the constant can be a is
 
 def skogestad_second_case(num,den):
     const = num[-1]/den[-2]
-    new_den = den/den[-2]
-    time_const = 1/den[-1]
+    new_den = [x/den[-2] for x in den]
+    time_const = 1/new_den[-1]
     k1 = 4
     tc = 0.7*time_const
     kp = time_const/(const*tc)
@@ -43,8 +43,8 @@ def skogestad_second_case(num,den):
 
 def skogestad_third_case(num,den):
     const = num[-1]/den[-3]
-    new_den = den/den[-3]
-    time_const = 1/den[-2]
+    new_den = [x/den[-3] for x in den]
+    time_const = 1/new_den[-2]
     k1 = 4
     tc = 0.7*time_const
     kp = 1/(const*tc)
@@ -70,7 +70,10 @@ def skogestad_fourth_case(num,den):
     k1 = 4
     tc = 0.7*t1
     kp = t1/(const*tc)
-    ki = min(k1*tc,t1)
+    try:
+        ki = min(k1*tc,t1)
+    except:
+        ki = k1*tc
     kd = t2
     return kp,ki,kd
 
@@ -139,5 +142,5 @@ def skogestad_method(num,den):
     return kp,ki,kd
 
 if __name__ == "__main__":
-    kp,ki,kd = skogestad_method([1],[1,0,1])
+    kp,ki,kd = skogestad_method([1],[0.603,1])
     print(kp,ki,kd)
