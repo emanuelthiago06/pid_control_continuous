@@ -31,17 +31,19 @@ class PID:
             
     def plot_graphs(self):
         sys = ct.tf(self.num,self.den)
+        sys = ct.feedback(sys,sign = -1)
         print(sys)
         t1,y1 = ct.step_response(sys)
         sys_pid_alone =  ct.tf(self.pid_num,self.pid_den)
         print(sys_pid_alone)
         sys_pid = ct.tf(self.true_conv(self.pid_num,self.num),self.true_conv(self.pid_den,self.den))
+        sys_pid = ct.feedback(sys_pid,sign=-1)
         print(sys_pid)
         t2,y2 = ct.step_response(sys_pid)
         t3,y3 = ct.step_response(sys_pid_alone)
+        plt.plot(t2,y2)
         plt.plot(t1,y1)
-        print(y3)
-        print(y2)
+        print(t3)
         plt.show()
 
     def pid_calc_paralel(self):
