@@ -88,7 +88,6 @@ def skogestad_last_case(num,den):
 def test_special_case1(term):
     if term[-1] == 0:
         return False
-
     for i in range(len(term)-1):
         if term[i] !=0:
             return False
