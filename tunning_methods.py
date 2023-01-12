@@ -1,3 +1,5 @@
+import math
+
 def model_pid_first_order(delay,time_const,const,p_const,i_const,d_const):
     kp = p_const*time_const/(const*delay)
     ki = i_const*delay
@@ -18,8 +20,9 @@ tunning_methods_table_first_order = {
 }
 
 def skogestad_first_case(num,den): #needs to be checked the constant can be a issue due to one being related to other
-    const = num[-1]
-    time_const = den[-2]
+    const = num[-1]/den[-2]
+    new_den = den/den[-2]
+    time_const = 1/new_den[-1]
     k1 = 4
     tc = 0.7*time_const
     kp = 1/(const*tc)
@@ -28,26 +31,113 @@ def skogestad_first_case(num,den): #needs to be checked the constant can be a is
     return kp,ki,kd
 
 def skogestad_second_case(num,den):
-    const = num[-1]
+    const = num[-1]/den[-2]
+    new_den = den/den[-2]
     time_const = 1/den[-1]
     k1 = 4
     tc = 0.7*time_const
-    kp = 1/(const*tc)
+    kp = time_const/(const*tc)
     ki = min(time_const,k1*tc)
     kd = 0
     return kp,ki,kd
 
 def skogestad_third_case(num,den):
-    const = num[-1]
-    time_const = 1/den[-1]
+    const = num[-1]/den[-3]
+    new_den = den/den[-3]
+    time_const = 1/den[-2]
     k1 = 4
     tc = 0.7*time_const
     kp = 1/(const*tc)
-    ki = min(time_const,k1*tc)
-    kd = 0
+    ki = k1*tc
+    kd = time_const
     return kp,ki,kd
 
+def solve_second_order(den):
+    c = den[-1]
+    b = den[-2]
+    a = den[-3]
+    delta = b**2-4*a*c
+    x1 = (-b+math.sqrt(delta))/(2*a)
+    x2 = (-b-math.sqrt(delta))/(2*a)
+    return x1,x2
+
+def skogestad_fourth_case(num,den):
+    const = num[-1]/den[-3]
+    new_den = [x/den[-3] for x in den]
+    x1,x2 = solve_second_order(new_den)
+    t1 = 1/x1
+    t2 = 1/x2
+    k1 = 4
+    tc = 0.7*t1
+    kp = t1/(const*tc)
+    ki = min(k1*tc,t1)
+    kd = t2
+    return kp,ki,kd
+
+def skogestad_last_case(num,den):
+    const = num[-1]/den[-3]
+    tc = 0.7*const
+    kp = 1/(4*const*tc**2)
+    ki = 4*tc
+    kd = ki
+    return kp,ki,kd
+
+def test_special_case1(term):
+    if term[-1] == 0:
+        return False
+    state = 0
+    for i in range(len(term)-1):
+        if term[i] !=0:
+            return False
+    return True
+
+def test_special_case2(term):
+    for i in term:
+        if i !=0:
+            return False
+    return True
+
+
+def remove_left_zeros(term):
+    if len(term) <3:
+        return term
+    new_term = []
+    state = 0
+    if test_special_case1(term):
+        return [0,1]
+    if test_special_case2(term):
+        return [0,0]
+    for i in term:
+        if state == 1:
+            new_term.append(i)
+        if state == 0 and i != 0:
+            new_term.append(i)
+            state = 1
+    return new_term
+            
 
 def skogestad_method(num,den):
-    pass
+    num = remove_left_zeros(num)
+    den = remove_left_zeros(den)
+    kp = 0
+    ki = 0
+    kd = 0
+    if len(den) == 2:
+        if den[-1] == 0 and den[-2] != 0:
+            kp,ki,kd = skogestad_first_case(num,den)
+        if den[-1] != 0 and den[-2] != 0:
+            kp,ki,kd = skogestad_second_case(num,den)
+    if len(den) == 3:
+        if den[-1] == 0 and den[-2]!=0 and den[-3]!=0:
+            kp,ki,kd = skogestad_third_case(num,den)
+        if den[-1] != 0 and den[-2]!=0 and den[-3]!=0:
+            kp,ki,kd = skogestad_fourth_case(num,den)
+        if den[-1] != 0 and den[-2]==0 and den[-3]!=0:
+            kp,ki,kd = skogestad_fourth_case(num,den)
+        if den[-1] == 0 and den[-2]==0 and den[-3]!=0:
+            kp,ki,kd = skogestad_last_case(num,den)
+    return kp,ki,kd
 
+if __name__ == "__main__":
+    kp,ki,kd = skogestad_method([1],[1,0,1])
+    print(kp,ki,kd)
