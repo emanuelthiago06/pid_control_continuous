@@ -1,4 +1,5 @@
 import cmath
+import control as ct
 
 def model_pid_first_order(delay,time_const,const,p_const,i_const,d_const):
     kp = p_const*time_const/(const*delay)
@@ -140,6 +141,21 @@ def skogestad_method(num,den):
             kp,ki,kd = skogestad_last_case(num,den)
     return kp,ki,kd
 
+def calcule_parameters(num,den):
+    sys = ct.tf(num,den)
+    sys_feed = ct.feedback(sys, sign = -1)
+    t,y = ct.step_response(sys_feed)
+    delay = 0
+    for i in range(len(y)-1):
+        if y[i+1]-y[i]!=0:
+            break
+        delay +=t[i]
+    new_den = [x/den[-2] for x in den]
+    time_const = 1/new_den[-1]
+    const = num[-1]/(new_den[-1]*den[-2])
+    return delay,time_const,const
+
+    
 if __name__ == "__main__":
     kp,ki,kd = skogestad_method([1],[0.603,1])
     print(kp,ki,kd)

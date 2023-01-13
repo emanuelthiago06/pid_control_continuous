@@ -28,7 +28,10 @@ class PID:
             self.kp = 1.275
             self.ki = 0.603
             self.kd = 0
-            
+        if self.tune in list_names:
+            delay,time_const,const = tunning_methods.calcule_parameters(self.num,self.den)
+            self.kp,self.kd,self.ki = tunning_methods.tunning_methods_table_first_order[self.tune](delay,time_const,const,self.den)
+
     def plot_graphs(self):
         sys = ct.tf(self.num,self.den)
         sys = ct.feedback(sys,sign = -1)
