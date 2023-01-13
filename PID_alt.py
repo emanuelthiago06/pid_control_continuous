@@ -21,6 +21,8 @@ class PID:
         self.delay = kwargs["delay"]
 
     def tune_method(self):
+        if self.tune == "IMC":
+            self.kp,self.ki,self.kd = tunning_methods.IMC_method(self.num,self.den)
         if self.tune == "skogestad":
             self.kp,self.ki,self.kd = tunning_methods.skogestad_method(self.num,self.den)
         list_names = ["ziegle_pi","ziegle,pid","chr_pi","chr_pid","chr20_pi","chr20_pid"]

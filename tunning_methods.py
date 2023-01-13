@@ -1,14 +1,13 @@
 import cmath
 import control as ct
+import math
+
 
 def model_pid_first_order(delay,time_const,const,p_const,i_const,d_const):
     kp = p_const*time_const/(const*delay)
     ki = i_const*delay
     kd = d_const*delay
     return kp,kd,ki
-
-#WIP def model_pid_second_order():
-    pass
 
 tunning_methods_table_first_order = {
     'ziegle_pi': lambda delay,time_const,const,den: model_pid_first_order(delay,time_const,const,0.9,3.3,0),
@@ -155,6 +154,96 @@ def calcule_parameters(num,den):
     const = num[-1]/(new_den[-1]*den[-2])
     return delay,time_const,const
 
+def sum_terms(self,first_term,second_term):
+        if len(first_term)>=len(second_term):
+            more_term = first_term
+            less_term = second_term
+        else:
+            more_term = second_term
+            less_term = first_term
+        more_term.reverse()
+        less_term.reverse()
+        sum_result = more_term
+        for i in range(len(less_term)):
+            sum_result[i] = more_term[i]+less_term[i]
+        sum_result.reverse()
+        return sum_result
+
+def feedback(num,den):
+    new_den = sum_terms(den,num)
+    return new_den
+
+def IMC_first_case(num,den):
+    const = num[-1]/den[-2]
+    new_den = [x/den[-2] for x in den]
+    time_const = 1/(new_den[-2])
+    lambd = 1/(new_den[-2]+const)
+    kp = 1/(lambd*const)
+    ki = 0
+    kd = 0
+    return kp,ki,kd
+
+def IMC_second_case(num,den):
+    new_den = [x/den[-2] for x in den]
+    time_const = 1/new_den[-1]
+    const = num[-1]/(new_den[-1]*den[-2])
+    lambd = 1/(num[-1]/den[-2]+den[-1]/den[-2])
+    kp = time_const/(lambd*const)
+    ki = time_const
+    kd = 0
+    return kp,ki,kd
+
+
+def IMC_third_case(num,den):
+    new_den = [x/den[-3] for x in den]
+    time_const = 1/new_den[-2]
+    const = num[-1]/(new_den[-2]*den[-3])
+    den_feedback = feedback(den)
+    new_den_feedback = [x/den_feedback[-3] for x in den_feedback]
+    try:
+        lambd = math.sqrt(1/new_den_feedback[-1])
+    except:
+        lambd = cmath.sqrt(1/new_den_feedback[-1])
+    kp = 1/(lambd*const)
+    ki = 0
+    kd = time_const
+
+def IMC_fourth_case(num,den):
+    new_den = [x/den[-3] for x in den]
+    time_const = 1/new_den[-1]
+    const = num[-1]/(new_den[-1]*den[-3])
+    den_feedback = feedback(den)
+    new_den_feedback = [x/den_feedback[-3] for x in den_feedback]
+    try:
+        lambd = math.sqrt(1/new_den_feedback[-1])
+    except:
+        lambd = cmath.sqrt(1/new_den_feedback[-1])
+    qsi_term = new_den[-2]/new_den[-1]
+    qsi = qsi_term/(2*time_const)
+    kp = 2*qsi*time_const/(const*lambd)
+    ki = 2*qsi*time_const
+    kd = time_const/(2*qsi)
+    return kp,ki,kd
+
+def IMC_method(num,den): ## missing the case where the function is 1/s**2
+    num = remove_left_zeros(num)
+    den = remove_left_zeros(den)
+    kp = 0
+    ki = 0
+    kd = 0
+    if len(den) == 2:
+        if den[-1] == 0 and den[-2] != 0:
+            kp,ki,kd = IMC_first_case(num,den)
+        if den[-1] != 0 and den[-2] != 0:
+            kp,ki,kd = IMC_second_case(num,den)
+    if len(den) == 3:
+        if den[-1] == 0 and den[-2]!=0 and den[-3]!=0:
+            kp,ki,kd = IMC_third_case(num,den)
+        if den[-1] != 0 and den[-2]!=0 and den[-3]!=0:
+            kp,ki,kd = IMC_fourth_case(num,den)
+        if den[-1] != 0 and den[-2]==0 and den[-3]!=0:
+            kp,ki,kd = IMC_fourth_case(num,den)
+    return kp,ki,kd
     
 if __name__ == "__main__":
     kp,ki,kd = skogestad_method([1],[0.603,1])
