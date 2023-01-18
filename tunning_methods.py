@@ -57,16 +57,20 @@ def solve_second_order(den):
     b = den[-2]
     a = den[-3]
     delta = b**2-4*a*c
-    x1 = (-b+cmath.sqrt(delta))/(2*a)
-    x2 = (-b-cmath.sqrt(delta))/(2*a)
+    try:
+        x1 = (-b+math.sqrt(delta))/(2*a)
+        x2 = (-b-math.sqrt(delta))/(2*a)
+    except:
+        x1 = (-b+cmath.sqrt(delta))/(2*a)
+        x2 = (-b-cmath.sqrt(delta))/(2*a)
     return x1,x2
 
 def skogestad_fourth_case(num,den):
     new_den = [x/den[-3] for x in den]
     x1,x2 = solve_second_order(new_den)
-    const = num[-1]/(x1*x2*den[-3])
-    t1 = 1/x1
-    t2 = 1/x2
+    const = num[-1]/(-x1*-x2*den[-3])
+    t1 = 1/-x1
+    t2 = 1/-x2
     k1 = 4
     tc = 0.7*t1
     kp = t1/(const*tc)
@@ -138,6 +142,7 @@ def skogestad_method(num,den):
             kp,ki,kd = skogestad_fourth_case(num,den)
         if den[-1] == 0 and den[-2]==0 and den[-3]!=0:
             kp,ki,kd = skogestad_last_case(num,den)
+    print(kp,ki,kd)
     return kp,ki,kd
 
 def calcule_parameters(num,den):

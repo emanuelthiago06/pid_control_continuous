@@ -7,6 +7,7 @@ class PID:
         self.kp = 0
         self.ki = 0
         self.kd = 0
+        self.kf = kwargs["filter"]
         self.pid_den = []
         self.pid_num = []
         self.tune = 0
@@ -45,10 +46,8 @@ class PID:
         sys_pid = ct.feedback(sys_pid,sign=-1)
         print(sys_pid)
         t2,y2 = ct.step_response(sys_pid)
-        t3,y3 = ct.step_response(sys_pid_alone)
         plt.plot(t2,y2)
         plt.plot(t1,y1)
-        print(t3)
         plt.show()
 
     def pid_calc_serie(self):
@@ -62,12 +61,18 @@ class PID:
 
     def pid_calc_paralel(self):
         #eq = kp*(1+td*s+1/(ti*s))
-        first_term_num = [self.kp*self.kd,self.kp]   #(kp+kp*td*s)
-        first_term_den = [0,1]
-        second_term_num = [0,self.kp] #1/(ti*s)
-        second_term_den = [self.ki,0]
-        self.pid_num,self.pid_den = self.sum_frac(first_term_num,first_term_den,second_term_num,second_term_den)
-    
+        #first_term_num = [self.kp*self.kd,self.kp]   #(kp+kp*td*s)
+        #first_term_den = [0,1]
+        derivative_term_num = [self.kp*self.kd,0]#(kp*td*s)
+        derivative_term_den = [self.kf,1]
+        integrative_term_num = [0,self.kp] #1/(ti*s)
+        integrative_term_den = [self.ki,0]
+        proportional_term_num = [0,self.kp] #kp/1
+        proportional_term_den = [0,1]
+        #self.pid_num,self.pid_den = self.sum_frac(first_term_num,first_term_den,second_term_num,second_term_den)
+        self.id_num,self.id_den = self.sum_frac(derivative_term_num,derivative_term_den,integrative_term_num,integrative_term_den)
+        self.pid_num,self.pid_den = self.sum_frac(self.id_den,self.id_num,proportional_term_num,proportional_term_den)
+
     def sum_frac(self,num1,den1,num2,den2):
         num1_conv = self.true_conv(num1,den2)
         den1_conv = self.true_conv(den1,den2)
@@ -108,11 +113,19 @@ class PID:
         sum_result.reverse()
         return sum_result
 
+    def run_pid(self):
+        self.tune_method()
+        self.pid_calc_paralel()
+
     def get_pid(self):
         self.tune_method()
         self.pid_calc_paralel()
         self.plot_graphs()
 
+    def get_pid_parameters(self):
+        self.run_pid()
+        return self.kp,self.ki,self.kd
+
 if __name__ == "__main__":
-    test = PID(delay = 0,tune = "auto",num = [1],den = [0.603,1])
+    test = PID(delay = 0,tune = "skogestad",num = [1],den = [1,4,3])
     test.get_pid()
