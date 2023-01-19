@@ -157,7 +157,7 @@ def calcule_parameters(num,den):
     new_den = [x/den[-2] for x in den]
     time_const = 1/new_den[-1]
     const = num[-1]/(new_den[-1]*den[-2])
-    return delay,time_const,const
+    return time_const,const
 
 def sum_terms(self,first_term,second_term):
         if len(first_term)>=len(second_term):

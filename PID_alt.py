@@ -20,7 +20,20 @@ class PID:
         else:
             self.tune = kwargs["tune"]
         self.delay = kwargs["delay"]
+        self.aproximation_pade()
 
+    def delay_representation(self,delay):
+        #delay: (2-s*td)/(2+s*td)
+        num_delay = [-delay,2]
+        den_delay = [delay,2]
+        return num_delay,den_delay
+
+    def aproximation_pade(self): # always run this function
+        if self.delay:
+            num_delay,den_delay = self.delay_representation(self.delay)
+            self.num = self.true_conv(self.num,num_delay)
+            self.den = self.true_conv(self.den,den_delay)
+            print(self.num,self.den)
     def tune_method(self):
         if self.tune == "IMC":
             self.kp,self.ki,self.kd = tunning_methods.IMC_method(self.num,self.den)
@@ -32,8 +45,8 @@ class PID:
             self.ki = 0.603
             self.kd = 0
         if self.tune in list_names:
-            delay,time_const,const = tunning_methods.calcule_parameters(self.num,self.den)
-            self.kp,self.kd,self.ki = tunning_methods.tunning_methods_table_first_order[self.tune](delay,time_const,const,self.den)
+            time_const,const = tunning_methods.calcule_parameters(self.num,self.den)
+            self.kp,self.kd,self.ki = tunning_methods.tunning_methods_table_first_order[self.tune](self.delay,time_const,const,self.den)
 
     def plot_graphs(self):
         sys = ct.tf(self.num,self.den)
@@ -53,25 +66,41 @@ class PID:
     def pid_calc_serie(self):
         integrate_term_num = [self.ki,1] #(1+Tis)
         integrate_term_den = [self.ki,0] #(Tis)
-        derivative_term_num = [self.kd,1] #Tds+1
-        derivative_term_den = [0,1]
+        derivative_term_num = [self.kd+self.kf,1] #Tds+1+Tfs
+        derivative_term_den = [self.kf,1]#1+Tfs
         id_num = self.true_conv(integrate_term_num,derivative_term_num)
         self.pid_den = self.true_conv(integrate_term_den,derivative_term_den)
         self.pid_num = [i*self.kp for i in id_num]
 
+    # def pid_calc_paralel(self):  ## OLD FUNCTION
+    #     #eq = kp*(1+td*s+1/(ti*s))
+    #     first_term_num = [self.kp*self.kd,self.kp]   #(kp+kp*td*s)
+    #     first_term_den = [0,1]
+    #     # derivative_term_num = [self.kp*self.kd,0]#(kp*td*s)
+    #     # derivative_term_den = [self.kf,1]
+    #     # integrative_term_num = [0,self.kp] #1/(ti*s)
+    #     # integrative_term_den = [self.ki,0]
+    #     # proportional_term_num = [0,self.kp] #kp/1
+    #     # proportional_term_den = [0,1]
+    #     second_term_num = [0,self.kp] #1/(ti*s)
+    #     second_term_den = [self.ki,0]
+    #     self.pid_num,self.pid_den = self.sum_frac(first_term_num,first_term_den,second_term_num,second_term_den)
+    #     #self.id_num,self.id_den = self.sum_frac(derivative_term_num,derivative_term_den,integrative_term_num,integrative_term_den)
+    #     #self.pid_num,self.pid_den = self.sum_frac(self.id_den,self.id_num,proportional_term_num,proportional_term_den)
+    #     print(self.pid_num,self.pid_den)
+
+    
     def pid_calc_paralel(self):
         #eq = kp*(1+td*s+1/(ti*s))
-        #first_term_num = [self.kp*self.kd,self.kp]   #(kp+kp*td*s)
-        #first_term_den = [0,1]
         derivative_term_num = [self.kp*self.kd,0]#(kp*td*s)
         derivative_term_den = [self.kf,1]
-        integrative_term_num = [0,self.kp] #1/(ti*s)
+        integrative_term_num = [0,self.kp] #kp/(ti*s)
         integrative_term_den = [self.ki,0]
         proportional_term_num = [0,self.kp] #kp/1
         proportional_term_den = [0,1]
-        #self.pid_num,self.pid_den = self.sum_frac(first_term_num,first_term_den,second_term_num,second_term_den)
         self.id_num,self.id_den = self.sum_frac(derivative_term_num,derivative_term_den,integrative_term_num,integrative_term_den)
-        self.pid_num,self.pid_den = self.sum_frac(self.id_den,self.id_num,proportional_term_num,proportional_term_den)
+        self.pid_num,self.pid_den = self.sum_frac(self.id_num,self.id_den,proportional_term_num,proportional_term_den)
+        print(self.pid_num,self.pid_den)
 
     def sum_frac(self,num1,den1,num2,den2):
         num1_conv = self.true_conv(num1,den2)
@@ -113,19 +142,24 @@ class PID:
         sum_result.reverse()
         return sum_result
 
-    def run_pid(self):
+    def run_pid_paralel(self):
         self.tune_method()
         self.pid_calc_paralel()
+        final_pid_num = self.true_conv(self.pid_num,self.num)
+        final_pid_den = self.true_conv(self.pid_den,self.den)
+        return final_pid_num,final_pid_den
 
-    def get_pid(self):
+    def get_pid_serie(self):
         self.tune_method()
-        self.pid_calc_paralel()
-        self.plot_graphs()
+        self.pid_calc_serie()
+        final_pid_num = self.true_conv(self.pid_num,self.num)
+        final_pid_den = self.true_conv(self.pid_den,self.den)
+        return final_pid_num,final_pid_den
 
     def get_pid_parameters(self):
         self.run_pid()
         return self.kp,self.ki,self.kd
 
 if __name__ == "__main__":
-    test = PID(delay = 0,tune = "skogestad",num = [1],den = [1,4,3])
+    test = PID(delay = 0,tune = "skogestad",num = [1],den = [0.603,1],filter = 0)
     test.get_pid()
