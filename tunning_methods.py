@@ -142,7 +142,6 @@ def skogestad_method(num,den):
             kp,ki,kd = skogestad_fourth_case(num,den)
         if den[-1] == 0 and den[-2]==0 and den[-3]!=0:
             kp,ki,kd = skogestad_last_case(num,den)
-    print(kp,ki,kd)
     return kp,ki,kd
 
 def calcule_parameters(num,den):
@@ -252,4 +251,3 @@ def IMC_method(num,den): ## missing the case where the function is 1/s**2
     
 if __name__ == "__main__":
     kp,ki,kd = skogestad_method([1],[0.603,1])
-    print(kp,ki,kd)
