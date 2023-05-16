@@ -1,6 +1,7 @@
 import control as ct
 import matplotlib.pyplot as plt
-from . import tunning_methods
+import tunning_methods
+from control import matlab
 
 
 class PID:
@@ -20,7 +21,7 @@ class PID:
         self.den = kwargs["den"]
         self.tune = 0 if "tune" not in kwargs else kwargs["tune"]
         self.delay = 0 if "delay" not in kwargs else float(kwargs["delay"])
-        self.aproximation_pade()
+        #self.aproximation_pade()
         self.tune_method()
 
     def delay_representation(self, delay):
@@ -58,7 +59,6 @@ class PID:
         sys = ct.tf(self.num, self.den)
         sys = ct.feedback(sys, sign=-1)
         t1, y1 = ct.step_response(sys)
-        sys_pid_alone = ct.tf(self.pid_num, self.pid_den)
         sys_pid = ct.tf(self.true_conv(self.pid_num, self.num),
                         self.true_conv(self.pid_den, self.den))
         sys_pid = ct.feedback(sys_pid, sign=-1)
@@ -166,6 +166,35 @@ class PID:
 
 
 if __name__ == "__main__":
-    test = PID(num=[1], den=[0.603, 1], tune = "skogestad", filter = 0, )
-    num,den = test.get_pid_with_tf()
-    print(num,den)
+    pid_exp = PID(num=[1], den=[0.603, 1], tune = "skogestad", filter = 0, )
+    num_exp,den_exp = pid_exp.get_pid_with_tf()
+    pid_fen = PID(num = [3.22, 12.25], den = [1,10.25,12.25], tune = "skogestad", filter = 0, )
+    num_fen,den_fen = pid_fen.get_pid_with_tf()
+    sys_fen = ct.tf(num_fen,den_fen)
+    sys_fen = ct.feedback(sys_fen, sign=-1)
+    sys_exp = ct.tf(num_exp,den_exp)
+    sys_exp = ct.feedback(sys_exp, sign=-1)
+    sys_fen_disc = matlab.c2d(sys_fen, 0.3)
+    sys_exp_disc = matlab.c2d(sys_exp, 0.3)
+    print(sys_fen_disc)
+    t1, y1 = ct.step_response(sys_fen_disc)
+    y1 = list(y1)
+    t1 = list(t1)
+    y1.insert(0,0)
+    t1.insert(0,0)
+    t2, y2 = ct.step_response(sys_exp_disc)
+    plt.step(t2, y2)
+    plt.step(t1, y1)
+    plt.title(' ')
+    plt.legend(["PI real", 'PI simulado'])
+    plt.ylabel('Amplitude (V)')
+    plt.xlabel('Tempo (s)')
+    plt.grid(1)
+    plt.savefig('plot_pi_step_dpi400.png',
+            bbox_inches ="tight",
+            pad_inches = 1,
+            transparent = True,
+            facecolor ="w",
+            orientation ='landscape',
+            dpi = 300)
+    plt.show()
